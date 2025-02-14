@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Pressable } from 'react-native';
 import { Text, Card, Button, ListItem } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 
 export default function AdminDashboard() {
@@ -13,7 +13,7 @@ export default function AdminDashboard() {
     todaySchedules: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [recentActivities, setRecentActivities] = useState([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -94,6 +94,10 @@ export default function AdminDashboard() {
     return data || [];
   };
 
+  const handleNewSchedule = () => {
+    router.push('/(admin)/schedules');
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -105,37 +109,45 @@ export default function AdminDashboard() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.statsGrid}>
-        <Link href="/admin/students" asChild>
-          <Card containerStyle={styles.statsCard}>
-            <Ionicons name="people" size={32} color="#FF6B6B" />
-            <Text style={styles.statNumber}>{stats.totalStudents}</Text>
-            <Text style={styles.statLabel}>Students</Text>
-          </Card>
-        </Link>
+        <View style={styles.statsCard}>
+          <Pressable onPress={() => router.push('/(admin)/students')}>
+            <Card containerStyle={styles.innerCard}>
+              <Ionicons name="people" size={32} color="#FF6B6B" />
+              <Text style={styles.statNumber}>{stats.totalStudents}</Text>
+              <Text style={styles.statLabel}>Students</Text>
+            </Card>
+          </Pressable>
+        </View>
 
-        <Link href="/admin/gathas" asChild>
-          <Card containerStyle={styles.statsCard}>
-            <Ionicons name="book" size={32} color="#FF6B6B" />
-            <Text style={styles.statNumber}>{stats.totalGathas}</Text>
-            <Text style={styles.statLabel}>Gathas</Text>
-          </Card>
-        </Link>
+        <View style={styles.statsCard}>
+          <Pressable onPress={() => router.push('/(admin)/gathas')}>
+            <Card containerStyle={styles.innerCard}>
+              <Ionicons name="book" size={32} color="#FF6B6B" />
+              <Text style={styles.statNumber}>{stats.totalGathas}</Text>
+              <Text style={styles.statLabel}>Gathas</Text>
+            </Card>
+          </Pressable>
+        </View>
 
-        <Link href="/admin/attendance" asChild>
-          <Card containerStyle={styles.statsCard}>
-            <Ionicons name="time" size={32} color="#FF6B6B" />
-            <Text style={styles.statNumber}>{stats.pendingRequests}</Text>
-            <Text style={styles.statLabel}>Pending Requests</Text>
-          </Card>
-        </Link>
+        <View style={styles.statsCard}>
+          <Pressable onPress={() => router.push('/(admin)')}>
+            <Card containerStyle={styles.innerCard}>
+              <Ionicons name="time" size={32} color="#FF6B6B" />
+              <Text style={styles.statNumber}>{stats.pendingRequests}</Text>
+              <Text style={styles.statLabel}>Pending Requests</Text>
+            </Card>
+          </Pressable>
+        </View>
 
-        <Link href="/admin/schedules" asChild>
-          <Card containerStyle={styles.statsCard}>
-            <Ionicons name="calendar" size={32} color="#FF6B6B" />
-            <Text style={styles.statNumber}>{stats.todaySchedules}</Text>
-            <Text style={styles.statLabel}>Today's Classes</Text>
-          </Card>
-        </Link>
+        <View style={styles.statsCard}>
+          <Pressable onPress={() => router.push('/(admin)/schedules')}>
+            <Card containerStyle={styles.innerCard}>
+              <Ionicons name="calendar" size={32} color="#FF6B6B" />
+              <Text style={styles.statNumber}>{stats.todaySchedules}</Text>
+              <Text style={styles.statLabel}>Today's Classes</Text>
+            </Card>
+          </Pressable>
+        </View>
       </View>
 
       <Card containerStyle={styles.activityCard}>
@@ -152,8 +164,10 @@ export default function AdminDashboard() {
               <View style={styles.statusContainer}>
                 <Text style={[
                   styles.statusText,
-                  { color: activity.status === 'pending' ? '#FFA726' :
-                          activity.status === 'approved' ? '#4CAF50' : '#FF6B6B' }
+                  {
+                    color: activity.status === 'pending' ? '#FFA726' :
+                      activity.status === 'approved' ? '#4CAF50' : '#FF6B6B'
+                  }
                 ]}>
                   {activity.status.toUpperCase()}
                 </Text>
@@ -168,7 +182,7 @@ export default function AdminDashboard() {
           title="New Schedule"
           icon={<Ionicons name="add-circle-outline" size={20} color="white" style={styles.buttonIcon} />}
           buttonStyle={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
-          onPress={() => router.push('/admin/schedules')}
+          onPress={handleNewSchedule}
         />
         <Button
           title="View Reports"
@@ -198,10 +212,12 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   statsCard: {
-    width: '45%',
+    width: '48%',
+    marginBottom: 10,
+  },
+  innerCard: {
     borderRadius: 15,
     padding: 15,
-    margin: 10,
     alignItems: 'center',
   },
   statNumber: {

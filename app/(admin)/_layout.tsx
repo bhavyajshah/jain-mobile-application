@@ -11,19 +11,21 @@ export default function AdminLayout() {
   };
 
   return (
-    <Stack screenOptions={{
-      headerStyle: {
-        backgroundColor: '#FF6B6B',
-      },
-      headerTintColor: '#fff',
-      headerRight: () => (
-        <Button
-          type="clear"
-          onPress={handleLogout}
-          icon={<Ionicons name="log-out-outline" size={24} color="white" />}
-        />
-      ),
-    }}>
+    <Stack
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#FF6B6B',
+        },
+        headerTintColor: '#fff',
+        headerRight: () => (
+          <Button
+            type="clear"
+            onPress={handleLogout}
+            icon={<Ionicons name="log-out-outline" size={24} color="white" />}
+          />
+        ),
+      }}
+    >
       <Stack.Screen
         name="index"
         options={{
@@ -46,12 +48,6 @@ export default function AdminLayout() {
         name="schedules"
         options={{
           title: 'Manage Schedules',
-        }}
-      />
-      <Stack.Screen
-        name="attendance"
-        options={{
-          title: 'Attendance Requests',
         }}
       />
     </Stack>

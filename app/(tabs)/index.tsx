@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 
 export default function AttendanceScreen() {
   const [loading, setLoading] = useState(false);
-  const [attendanceRequest, setAttendanceRequest] = useState(null);
+  const [attendanceRequest, setAttendanceRequest] = useState<any>(null);
   const [streak, setStreak] = useState(0);
   const [gathaCount, setGathaCount] = useState(0);
   const [schedules, setSchedules] = useState([]);
@@ -19,6 +19,47 @@ export default function AttendanceScreen() {
     fetchTodaySchedules();
     fetchCompletedGathas();
   }, []);
+
+  const calculateStreak = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: attendanceData } = await supabase
+        .from('attendance_requests')
+        .select('date, status')
+        .eq('student_id', user.id)
+        .eq('status', 'approved')
+        .order('date', { ascending: false });
+
+      if (!attendanceData || attendanceData.length === 0) {
+        setStreak(0);
+        return;
+      }
+
+      let currentStreak = 0;
+      let lastDate = new Date();
+      lastDate.setHours(0, 0, 0, 0);
+
+      for (const record of attendanceData) {
+        const attendanceDate = new Date(record.date);
+        attendanceDate.setHours(0, 0, 0, 0);
+
+        const daysDifference = Math.floor((lastDate - attendanceDate) / (1000 * 60 * 60 * 24));
+
+        if (daysDifference <= 1) {
+          currentStreak++;
+          lastDate = attendanceDate;
+        } else {
+          break;
+        }
+      }
+
+      setStreak(currentStreak);
+    } catch (error) {
+      console.error('Error calculating streak:', error);
+    }
+  };
 
   const checkAttendanceRequest = async () => {
     try {
@@ -114,7 +155,7 @@ export default function AttendanceScreen() {
 
   const getAttendanceStatus = () => {
     if (!attendanceRequest) return null;
-    
+
     switch (attendanceRequest.status) {
       case 'approved':
         return {
@@ -209,7 +250,7 @@ export default function AttendanceScreen() {
       {completedGathas.length > 0 && (
         <Card containerStyle={styles.gathasCard}>
           <Card.Title h4>Recently Completed Gathas</Card.Title>
-          {completedGathas.slice(0, 3).map((item) => (
+          {completedGathas.slice(0, 3).map((item:any) => (
             <View key={item.id} style={styles.gathaItem}>
               <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
               <View style={styles.gathaText}>
@@ -228,7 +269,7 @@ export default function AttendanceScreen() {
         {schedules.length === 0 ? (
           <Text style={styles.noSchedule}>No schedules for today</Text>
         ) : (
-          schedules.map((schedule) => (
+          schedules.map((schedule:any) => (
             <View key={schedule.id} style={styles.scheduleItem}>
               <Ionicons name="time" size={24} color="#FF6B6B" />
               <View style={styles.scheduleText}>

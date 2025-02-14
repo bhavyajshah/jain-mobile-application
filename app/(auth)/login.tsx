@@ -36,7 +36,7 @@ export default function LoginScreen() {
           .single();
 
         if (profile?.role === 'admin') {
-          router.replace('/admin');
+          router.replace('/(admin)');
         } else {
           router.replace('/(tabs)');
         }
@@ -86,7 +86,7 @@ export default function LoginScreen() {
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          }
+
 
           <Button
             title={loading ? "Logging in..." : "Login"}
@@ -99,7 +99,7 @@ export default function LoginScreen() {
 
           <View style={styles.signupLink}>
             <Text style={styles.signupText}>Don't have an account? </Text>
-            <Link href="/signup" style={styles.link}>
+            <Link href="/signup" asChild>
               <Text style={styles.linkText}>Sign up here</Text>
             </Link>
           </View>
@@ -159,9 +159,6 @@ const styles = StyleSheet.create({
   },
   signupText: {
     color: '#666',
-  },
-  link: {
-    marginLeft: 5,
   },
   linkText: {
     color: '#FF6B6B',
