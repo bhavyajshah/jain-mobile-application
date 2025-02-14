@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import './../global.css';
 import { ThemeProvider } from '@rneui/themed';
 import { supabase } from '../lib/supabase';
 import { View, ActivityIndicator } from 'react-native';

@@ -30,19 +30,22 @@ export default function SignupScreen() {
       if (signUpError) throw signUpError;
 
       if (user) {
-        // Then create the profile
+        // Create the profile using upsert to handle any race conditions
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert([
-            {
-              id: user.id,
-              full_name: name,
-              email: email,
-              role: 'student',
-            },
-          ]);
+          .upsert({
+            id: user.id,
+            full_name: name,
+            email: email,
+            role: 'student',
+          }, {
+            onConflict: 'id'
+          });
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          throw new Error('Failed to create user profile');
+        }
 
         Alert.alert(
           'Success',
@@ -79,6 +82,7 @@ export default function SignupScreen() {
             leftIcon={{ type: 'ionicon', name: 'person-outline' }}
             autoCapitalize="words"
             disabled={loading}
+            containerStyle={styles.inputContainer}
           />
 
           <Input
@@ -92,6 +96,7 @@ export default function SignupScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             disabled={loading}
+            containerStyle={styles.inputContainer}
           />
 
           <Input
@@ -104,11 +109,10 @@ export default function SignupScreen() {
             leftIcon={{ type: 'ionicon', name: 'lock-closed-outline' }}
             secureTextEntry
             disabled={loading}
+            containerStyle={styles.inputContainer}
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          
-
           <Button
             title={loading ? "Creating Account..." : "Sign Up"}
             onPress={handleSignup}
@@ -116,6 +120,7 @@ export default function SignupScreen() {
             disabled={loading}
             containerStyle={styles.buttonContainer}
             buttonStyle={styles.button}
+            raised
           />
 
           <View style={styles.loginLink}>
@@ -159,6 +164,10 @@ const styles = StyleSheet.create({
   form: {
     width: '100%',
     maxWidth: 400,
+  },
+  inputContainer: {
+    paddingHorizontal: 0,
+    marginBottom: 10,
   },
   error: {
     color: '#FF6B6B',
