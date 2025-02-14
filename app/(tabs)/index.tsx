@@ -15,10 +15,26 @@ export default function AttendanceScreen() {
   useEffect(() => {
     checkAttendanceRequest();
     calculateStreak();
-    fetchGathaCount();
+    fetchStudentGathaCount();
     fetchTodaySchedules();
     fetchCompletedGathas();
   }, []);
+
+  const fetchStudentGathaCount = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { count } = await supabase
+        .from('student_gathas')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', user.id);
+
+      setGathaCount(count || 0);
+    } catch (error) {
+      console.error('Error fetching gatha count:', error);
+    }
+  };
 
   const calculateStreak = async () => {
     try {
@@ -115,7 +131,6 @@ export default function AttendanceScreen() {
 
       if (error) throw error;
       setCompletedGathas(data || []);
-      setGathaCount(data?.length || 0);
     } catch (error) {
       console.error('Error fetching completed gathas:', error);
     }
@@ -142,11 +157,15 @@ export default function AttendanceScreen() {
           },
         ]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Attendance request error:', error);
+        throw error;
+      }
 
       Alert.alert('Success', 'Attendance request submitted successfully!');
-      checkAttendanceRequest();
+      await checkAttendanceRequest();
     } catch (error) {
+      console.error('Request attendance error:', error);
       Alert.alert('Error', 'Failed to submit attendance request. Please try again.');
     } finally {
       setLoading(false);
@@ -250,7 +269,7 @@ export default function AttendanceScreen() {
       {completedGathas.length > 0 && (
         <Card containerStyle={styles.gathasCard}>
           <Card.Title h4>Recently Completed Gathas</Card.Title>
-          {completedGathas.slice(0, 3).map((item:any) => (
+          {completedGathas.slice(0, 3).map((item: any) => (
             <View key={item.id} style={styles.gathaItem}>
               <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
               <View style={styles.gathaText}>
@@ -269,7 +288,7 @@ export default function AttendanceScreen() {
         {schedules.length === 0 ? (
           <Text style={styles.noSchedule}>No schedules for today</Text>
         ) : (
-          schedules.map((schedule:any) => (
+          schedules.map((schedule: any) => (
             <View key={schedule.id} style={styles.scheduleItem}>
               <Ionicons name="time" size={24} color="#FF6B6B" />
               <View style={styles.scheduleText}>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, StyleSheet, Image, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, Image, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { Text, Input, Button } from '@rneui/themed';
 import { Link, router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -20,6 +20,9 @@ export default function LoginScreen() {
     setError('');
 
     try {
+      // Check if it's the admin login
+      const isAdminLogin = email === 'admin@jainpathshala.com' && password === 'admin@1234';
+
       const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -28,17 +31,34 @@ export default function LoginScreen() {
       if (signInError) throw signInError;
 
       if (user) {
-        // Check if user is admin
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+        if (isAdminLogin) {
+          // Create or update admin profile
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: user.id,
+              email: email,
+              role: 'admin',
+              full_name: 'Admin'
+            }, {
+              onConflict: 'id'
+            });
 
-        if (profile?.role === 'admin') {
+          if (profileError) throw profileError;
           router.replace('/(admin)');
         } else {
-          router.replace('/(tabs)');
+          // Check existing profile
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+          if (profile?.role === 'admin') {
+            router.replace('/(admin)');
+          } else {
+            router.replace('/(tabs)');
+          }
         }
       }
     } catch (err) {
@@ -87,7 +107,6 @@ export default function LoginScreen() {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-
           <Button
             title={loading ? "Logging in..." : "Login"}
             onPress={handleLogin}
@@ -99,9 +118,9 @@ export default function LoginScreen() {
 
           <View style={styles.signupLink}>
             <Text style={styles.signupText}>Don't have an account? </Text>
-            <Link href="/signup" asChild>
+            <TouchableOpacity onPress={() => router.push('/signup')}>
               <Text style={styles.linkText}>Sign up here</Text>
-            </Link>
+            </TouchableOpacity>
           </View>
         </View>
       </View>

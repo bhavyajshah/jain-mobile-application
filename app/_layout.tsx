@@ -16,57 +16,67 @@ const theme = {
 
 export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
-  const router = useRouter();
+  const [session, setSession] = useState(null);
   const segments = useSegments();
+  const router = useRouter();
 
   useEffect(() => {
-    if (!initialized) {
-      setInitialized(true);
-      return;
-    }
-
-    const checkAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) throw error;
-        
-        const inProtectedRoute = segments[0] === '(tabs)';
-        
-        if (!session && inProtectedRoute) {
-          router.replace('/login');
-        } else if (session && !inProtectedRoute) {
-          router.replace('/(tabs)');
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        router.replace('/login');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!initialized) return;
-      
-      const inProtectedRoute = segments[0] === '(tabs)';
-      
-      if (!session && inProtectedRoute) {
-        router.replace('/login');
-      } else if (session && !inProtectedRoute) {
-        router.replace('/(tabs)');
-      }
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [router, segments, initialized]);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
 
-  if (isLoading || !initialized) {
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+    const inAdminGroup = segments[0] === '(admin)';
+    const inTabsGroup = segments[0] === '(tabs)';
+
+    const checkUserRole = async () => {
+      if (!session) {
+        // If no session and not in auth group, redirect to login
+        if (!inAuthGroup) {
+          router.replace('/login');
+        }
+        return;
+      }
+
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile?.role === 'admin') {
+          if (!inAdminGroup) {
+            router.replace('/(admin)');
+          }
+        } else {
+          if (!inTabsGroup) {
+            router.replace('/(tabs)');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+        router.replace('/login');
+      }
+    };
+
+    checkUserRole();
+  }, [session, segments, isLoading]);
+
+  if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#FF6B6B" />

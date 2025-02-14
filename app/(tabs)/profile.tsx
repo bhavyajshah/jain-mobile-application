@@ -22,9 +22,16 @@ export default function ProfileScreen() {
 
   const fetchUserProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
-    // In a real app, fetch user's name from a profiles table
-    setName(user?.phone || '');
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      setUser(user);
+      setName(profile?.full_name || '');
+    }
   };
 
   const fetchStats = async () => {
@@ -70,8 +77,12 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      router.replace('/login');
+      // Wait for a moment to ensure the auth state is updated
+      setTimeout(() => {
+        router.replace('/login');
+      }, 100);
     } catch (error) {
+      console.error('Logout error:', error);
       Alert.alert('Error', 'Failed to logout. Please try again.');
     }
   };
@@ -98,7 +109,7 @@ export default function ProfileScreen() {
               <Text h4 style={styles.name}>{name}</Text>
             </TouchableOpacity>
           )}
-          <Text style={styles.phone}>{user?.phone}</Text>
+          <Text style={styles.phone}>{user?.email}</Text>
         </View>
 
         <View style={styles.statsContainer}>

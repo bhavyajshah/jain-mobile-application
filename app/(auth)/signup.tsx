@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, StyleSheet, Image, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, Image, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { Text, Input, Button } from '@rneui/themed';
 import { Link, router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -21,38 +21,35 @@ export default function SignupScreen() {
     setError('');
 
     try {
+      // First create the auth user
       const { data: { user }, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            full_name: name,
-          },
-        },
       });
 
       if (signUpError) throw signUpError;
 
       if (user) {
-        // Create profile entry
+        // Then create the profile
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([
             {
               id: user.id,
               full_name: name,
-              role: 'student', // Default role is student
+              email: email,
+              role: 'student',
             },
           ]);
 
         if (profileError) throw profileError;
-      }
 
-      Alert.alert(
-        'Success',
-        'Account created successfully! Please login to continue.',
-        [{ text: 'OK', onPress: () => router.replace('/login') }]
-      );
+        Alert.alert(
+          'Success',
+          'Account created successfully! Please login to continue.',
+          [{ text: 'OK', onPress: () => router.replace('/login') }]
+        );
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
       setError(errorMessage);
@@ -110,7 +107,7 @@ export default function SignupScreen() {
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          }
+          
 
           <Button
             title={loading ? "Creating Account..." : "Sign Up"}
@@ -123,9 +120,9 @@ export default function SignupScreen() {
 
           <View style={styles.loginLink}>
             <Text style={styles.loginText}>Already have an account? </Text>
-            <Link href="/login" style={styles.link}>
+            <TouchableOpacity onPress={() => router.push('/login')}>
               <Text style={styles.linkText}>Login here</Text>
-            </Link>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -183,9 +180,6 @@ const styles = StyleSheet.create({
   },
   loginText: {
     color: '#666',
-  },
-  link: {
-    marginLeft: 5,
   },
   linkText: {
     color: '#FF6B6B',
