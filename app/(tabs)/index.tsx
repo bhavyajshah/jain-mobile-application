@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Alert, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Alert, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { Text, Button, Card } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
@@ -12,12 +12,7 @@ export default function AttendanceScreen() {
   const [gathaCount, setGathaCount] = useState(0);
   const [schedules, setSchedules] = useState<any[]>([]);
   const [completedGathas, setCompletedGathas] = useState<any[]>([]);
-  interface UserProfile {
-    full_name: string;
-    // Add other properties as needed
-  }
-
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchUserProfile = async () => {
@@ -33,7 +28,6 @@ export default function AttendanceScreen() {
 
       if (profileError) {
         if (profileError.code === 'PGRST116') {
-          // Profile doesn't exist, create it
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .upsert({
@@ -117,11 +111,9 @@ export default function AttendanceScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Ensure profile exists
       const profile = await fetchUserProfile();
       if (!profile) throw new Error('Failed to verify user profile');
 
-      // Create attendance request
       const { error: requestError } = await supabase
         .from('attendance_requests')
         .insert([
@@ -267,15 +259,6 @@ export default function AttendanceScreen() {
     }
   };
 
-  if (loading && !refreshing) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF6B6B" />
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
-    );
-  }
-
   const getAttendanceStatus = () => {
     if (!attendanceRequest) return null;
 
@@ -304,23 +287,32 @@ export default function AttendanceScreen() {
     }
   };
 
+  if (loading && !refreshing) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-50">
+        <ActivityIndicator size="large" color="#FF6B6B" />
+        <Text className="mt-2 text-gray-600">Loading...</Text>
+      </View>
+    );
+  }
+
   const status = getAttendanceStatus();
 
   return (
     <ScrollView
-      style={styles.container}
+      className="flex-1 bg-gray-50"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <Card containerStyle={styles.welcomeCard}>
-        <View style={styles.welcomeHeader}>
+      <Card containerStyle={{ borderRadius: 15, margin: 20 }}>
+        <View className="flex-row items-center mb-2">
           <Ionicons name="sunny" size={32} color="#FF6B6B" />
-          <Text h4 style={styles.welcomeText}>
+          <Text h4 className="ml-2 text-gray-800">
             Welcome, {userProfile?.full_name || 'Student'}
           </Text>
         </View>
-        <Text style={styles.date}>
+        <Text className="text-gray-600 text-base">
           {new Date().toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
@@ -331,19 +323,19 @@ export default function AttendanceScreen() {
       </Card>
 
       {error && (
-        <Card containerStyle={styles.errorCard}>
-          <Text style={styles.errorText}>{error}</Text>
+        <Card containerStyle={{ borderRadius: 15, margin: 20, backgroundColor: '#FFE5E5' }}>
+          <Text className="text-red-500 text-center">{error}</Text>
         </Card>
       )}
 
-      <Card containerStyle={styles.attendanceCard}>
+      <Card containerStyle={{ borderRadius: 15, margin: 20 }}>
         {status ? (
-          <View style={styles.markedContainer}>
+          <View className="items-center p-5">
             <Ionicons name={status.icon} size={48} color={status.color} />
-            <Text style={[styles.markedText, { color: status.color }]}>
+            <Text className="text-lg font-bold mt-2 text-center" style={{ color: status.color }}>
               {status.text}
             </Text>
-            <Text style={styles.markedTime}>
+            <Text className="text-sm text-gray-600 mt-1">
               {status.time}
             </Text>
           </View>
@@ -354,43 +346,47 @@ export default function AttendanceScreen() {
             loading={loading}
             disabled={loading}
             icon={
-              <View style={styles.buttonIconContainer}>
+              <View className="mr-2">
                 <Ionicons name="hand-right" size={24} color="white" />
               </View>
             }
-            buttonStyle={styles.button}
+            buttonStyle={{
+              backgroundColor: '#FF6B6B',
+              borderRadius: 10,
+              paddingVertical: 15,
+            }}
             raised
           />
         )}
       </Card>
 
-      <View style={styles.statsRow}>
-        <Card containerStyle={styles.statCard}>
-          <View style={styles.statContent}>
+      <View className="flex-row justify-between px-5">
+        <Card containerStyle={{ flex: 1, borderRadius: 15, margin: 5 }}>
+          <View className="items-center">
             <Ionicons name="flame" size={32} color="#FF6B6B" />
-            <Text style={styles.statNumber}>{streak}</Text>
-            <Text style={styles.statLabel}>Day Streak</Text>
+            <Text className="text-2xl font-bold text-gray-800 mt-1">{streak}</Text>
+            <Text className="text-sm text-gray-600">Day Streak</Text>
           </View>
         </Card>
 
-        <Card containerStyle={styles.statCard}>
-          <View style={styles.statContent}>
+        <Card containerStyle={{ flex: 1, borderRadius: 15, margin: 5 }}>
+          <View className="items-center">
             <Ionicons name="book" size={32} color="#FF6B6B" />
-            <Text style={styles.statNumber}>{gathaCount}</Text>
-            <Text style={styles.statLabel}>Gathas Learned</Text>
+            <Text className="text-2xl font-bold text-gray-800 mt-1">{gathaCount}</Text>
+            <Text className="text-sm text-gray-600">Gathas Learned</Text>
           </View>
         </Card>
       </View>
 
       {completedGathas.length > 0 && (
-        <Card containerStyle={styles.gathasCard}>
+        <Card containerStyle={{ borderRadius: 15, margin: 20 }}>
           <Card.Title h4>Recently Completed Gathas</Card.Title>
           {completedGathas.map((item: any) => (
-            <View key={item.id} style={styles.gathaItem}>
+            <View key={item.id} className="flex-row items-center mb-4 pb-4 border-b border-gray-200">
               <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-              <View style={styles.gathaText}>
-                <Text style={styles.gathaTitle}>{item.gatha.title}</Text>
-                <Text style={styles.gathaDate}>
+              <View className="ml-4 flex-1">
+                <Text className="text-base font-bold text-gray-800">{item.gatha.title}</Text>
+                <Text className="text-sm text-gray-600 mt-1">
                   {new Date(item.completed_at).toLocaleDateString()}
                 </Text>
               </View>
@@ -399,21 +395,21 @@ export default function AttendanceScreen() {
         </Card>
       )}
 
-      <Card containerStyle={styles.scheduleCard}>
+      <Card containerStyle={{ borderRadius: 15, margin: 20 }}>
         <Card.Title h4>Today's Schedule</Card.Title>
         {schedules.length === 0 ? (
-          <Text style={styles.noSchedule}>No schedules for today</Text>
+          <Text className="text-center text-gray-600 italic py-5">No schedules for today</Text>
         ) : (
           schedules.map((schedule: any) => (
-            <View key={schedule.id} style={styles.scheduleItem}>
+            <View key={schedule.id} className="flex-row items-center mb-4 pb-4 border-b border-gray-200">
               <Ionicons name="time" size={24} color="#FF6B6B" />
-              <View style={styles.scheduleText}>
-                <Text style={styles.scheduleTime}>
+              <View className="ml-4 flex-1">
+                <Text className="text-base font-bold text-gray-800">
                   {schedule.start_time} - {schedule.end_time}
                 </Text>
-                <Text style={styles.scheduleSubject}>{schedule.title}</Text>
+                <Text className="text-sm text-red-500 mt-1">{schedule.title}</Text>
                 {schedule.description && (
-                  <Text style={styles.scheduleDescription}>
+                  <Text className="text-sm text-gray-600 mt-1">
                     {schedule.description}
                   </Text>
                 )}
@@ -425,182 +421,3 @@ export default function AttendanceScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F7F7F7',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F7F7F7',
-  },
-  loadingText: {
-    marginTop: 10,
-    color: '#666',
-  },
-  welcomeCard: {
-    borderRadius: 15,
-    padding: 20,
-    margin: 20,
-    marginBottom: 10,
-    backgroundColor: '#FFF',
-    elevation: 4,
-  },
-  welcomeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  welcomeText: {
-    marginLeft: 10,
-    color: '#333',
-  },
-  date: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 5,
-  },
-  errorCard: {
-    borderRadius: 15,
-    padding: 15,
-    margin: 20,
-    marginTop: 0,
-    backgroundColor: '#FFE5E5',
-    borderColor: '#FF6B6B',
-  },
-  errorText: {
-    color: '#FF6B6B',
-    textAlign: 'center',
-  },
-  attendanceCard: {
-    borderRadius: 15,
-    padding: 20,
-    margin: 20,
-    marginTop: 10,
-    backgroundColor: '#FFF',
-    elevation: 4,
-  },
-  button: {
-    backgroundColor: '#FF6B6B',
-    borderRadius: 10,
-    paddingVertical: 15,
-  },
-  buttonIconContainer: {
-    marginRight: 10,
-  },
-  markedContainer: {
-    alignItems: 'center',
-    padding: 20,
-  },
-  markedText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  markedTime: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 5,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginHorizontal: 20,
-  },
-  statCard: {
-    flex: 1,
-    borderRadius: 15,
-    padding: 15,
-    margin: 0,
-    marginHorizontal: 5,
-    backgroundColor: '#FFF',
-    elevation: 4,
-  },
-  statContent: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 5,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
-  gathasCard: {
-    borderRadius: 15,
-    padding: 20,
-    margin: 20,
-    backgroundColor: '#FFF',
-    elevation: 4,
-  },
-  gathaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  gathaText: {
-    marginLeft: 15,
-    flex: 1,
-  },
-  gathaTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  gathaDate: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  scheduleCard: {
-    borderRadius: 15,
-    padding: 20,
-    margin: 20,
-    backgroundColor: '#FFF',
-    elevation: 4,
-  },
-  noSchedule: {
-    textAlign: 'center',
-    color: '#666',
-    fontStyle: 'italic',
-    padding: 20,
-  },
-  scheduleItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  scheduleText: {
-    marginLeft: 15,
-    flex: 1,
-  },
-  scheduleTime: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  scheduleSubject: {
-    fontSize: 14,
-    color: '#FF6B6B',
-    marginTop: 4,
-  },
-  scheduleDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-});
